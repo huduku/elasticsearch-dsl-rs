@@ -1,0 +1,199 @@
+
+
+{
+  "_source": {
+    "includes": [
+      "name",
+      "credit_no"
+    ]
+  },
+  "from": 0,
+  "size": 100,
+  "sort": [],
+  "track_total_hits": true,
+  "highlight": {
+    "fields": {},
+    "pre_tags": ["<em>"],
+    "post_tags": ["</em>"]
+  },
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "bool": {
+            "should": [
+              {
+                "match_phrase": {
+                  "name_max_word_ik": {
+                    "boost": 1.2,
+                    "query": "小米科技",
+                    "slop": 20
+                  }
+                }
+              },
+              {
+                "match_phrase": {
+                  "name_st": {
+                    "boost": 0.8,
+                    "query": "小米科技",
+                    "slop": 20
+                  }
+                }
+              },
+              {
+                "match_phrase": {
+                  "name": {
+                    "boost": 2,
+                    "query": "小米科技",
+                    "slop": 20
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "term": {
+            "deprecated": {
+              "value": "D"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "rescore": [
+    {
+      "query": {
+        "rescore_query": {
+          "function_score": {
+            "functions": [
+              {
+                "script_score": {
+                  "script": { // 注册资本
+                    "source": "doc['reg_cap'].empty ? 0 : Math.log10(doc['reg_cap'].value + 2)"
+                  }
+                }
+              }
+            ],
+            "query": {
+              "match_all": {}
+            },
+            "score_mode": "multiply"
+          }
+        },
+        "score_mode": "multiply"
+      },
+      "window_size": 1000
+    },
+    {
+      "query": {
+        "rescore_query": {
+          "function_score": {
+            "functions": [
+              {
+                "script_score": {
+                  "script": { // 本身评分
+                    "source": "doc['score'].empty ? 0 : Math.log10(doc['score'].value + 2)"
+                  }
+                }
+              }
+            ],
+            "query": {
+              "match_all": {}
+            },
+            "score_mode": "multiply"
+          }
+        },
+        "score_mode": "multiply"
+      },
+      "window_size": 1000
+    },
+    {
+      "query": {
+        "rescore_query": {
+          "bool": {
+            "must": [
+              {
+                "term": { // 运营状态
+                  "business_status_code": {
+                    "value": "1"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "query_weight": 1,
+        "rescore_query_weight": 10,
+        "score_mode": "total"
+      },
+      "window_size": 1000
+    },
+    {
+      "query": {
+        "rescore_query": {
+          "bool": {
+            "must": [
+              {
+                "term": {
+                  "name": { // 名称匹配
+                    "value": "小米科技"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "query_weight": 1,
+        "rescore_query_weight": 3,
+        "score_mode": "total"
+      },
+      "window_size": 1000
+    },
+    {
+      "query": {
+        "rescore_query": {
+          "bool": {
+            "must": [
+              {
+                "term": { // 执行信息
+                  "executives": {
+                    "value": "小米科技"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "query_weight": 1,
+        "rescore_query_weight": 1,
+        "score_mode": "total"
+      },
+      "window_size": 1000
+    },
+    {
+      "query": {
+        "rescore_query": {
+          "bool": {
+            "must": [
+              {
+                "term": { // 运营名称
+                  "oper_name": {
+                    "value": "小米科技"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "query_weight": 1,
+        "rescore_query_weight": 1.5,
+        "score_mode": "total"
+      },
+      "window_size": 1000
+    }
+  ]
+}
